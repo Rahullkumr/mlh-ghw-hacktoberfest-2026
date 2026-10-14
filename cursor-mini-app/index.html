@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0610" />
+  <title>Rangoli Maker</title>
+  <style>
+    :root {
+      --bg: #0b0610;
+      --panel: rgba(18, 10, 24, 0.88);
+      --ink: #f6ead8;
+      --muted: #c9b8a0;
+      --line: rgba(246, 234, 216, 0.16);
+      --accent: #ffb347;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", "Noto Sans", system-ui, sans-serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #guides { pointer-events: none; }
+
+    header {
+      position: fixed;
+      top: calc(10px + var(--safe-t));
+      left: 12px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      text-shadow: 0 2px 12px #000;
+    }
+
+    header p {
+      margin: 2px 0 0;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-shadow: 0 1px 8px #000;
+    }
+
+    #toolbar {
+      position: fixed;
+      left: 8px;
+      right: 8px;
+      bottom: calc(8px + var(--safe-b));
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      touch-action: manipulation;
+    }
+
+    .group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 92px;
+      accent-color: var(--accent);
+    }
+
+    #foldsVal, #sizeVal {
+      min-width: 1.4em;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.8rem;
+    }
+
+    .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .swatch, .rainbow {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      padding: 0;
+      cursor: pointer;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
+    }
+
+    .swatch[aria-pressed="true"],
+    .rainbow[aria-pressed="true"] {
+      border-color: #fff;
+      transform: scale(1.08);
+    }
+
+    .rainbow {
+      background: conic-gradient(
+        #ff4d4d, #ffb347, #f2d14b, #3cb371, #1e90ff, #8a2be2, #ff4d4d
+      );
+    }
+
+    button.action {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #24182c;
+      color: var(--ink);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    button.action:active { transform: scale(0.97); }
+
+    button.action[aria-pressed="true"] {
+      background: #3a2a18;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    @media (max-width: 640px) {
+      header h1 { font-size: 0.95rem; }
+      input[type="range"] { width: 72px; }
+      .swatch, .rainbow { width: 26px; height: 26px; }
+      #toolbar { gap: 6px 8px; padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="ink"></canvas>
+    <canvas id="guides"></canvas>
+  </div>
+
+  <header>
+    <h1>Rangoli Maker</h1>
+    <p>Draw — the pattern mirrors around the center</p>
+  </header>
+
+  <div id="toolbar">
+    <div class="group">
+      <label for="folds">Symmetry</label>
+      <input id="folds" type="range" min="4" max="16" step="1" value="8" />
+      <span id="foldsVal">8</span>
+    </div>
+    <div class="group">
+      <label for="size">Brush</label>
+      <input id="size" type="range" min="1" max="24" step="1" value="4" />
+      <span id="sizeVal">4</span>
+    </div>
+    <div class="group swatches" id="palette" role="listbox" aria-label="Colors"></div>
+    <div class="group">
+      <button class="action" id="gridBtn" type="button" aria-pressed="true">Grid</button>
+      <button class="action" id="undoBtn" type="button">Undo</button>
+      <button class="action" id="clearBtn" type="button">Clear</button>
+      <button class="action" id="saveBtn" type="button">Save PNG</button>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = [
+      { name: "Marigold", hex: "#FFB347" },
+      { name: "Vermilion", hex: "#E34234" },
+      { name: "Turmeric", hex: "#E1AD01" },
+      { name: "Peacock blue", hex: "#1A7A8C" },
+      { name: "Leaf green", hex: "#3D8B4A" },
+      { name: "White", hex: "#F7F1E3" },
+    ];
+
+    const ink = document.getElementById("ink");
+    const guides = document.getElementById("guides");
+    const ctx = ink.getContext("2d");
+    const gtx = guides.getContext("2d");
+    const foldsEl = document.getElementById("folds");
+    const sizeEl = document.getElementById("size");
+    const foldsVal = document.getElementById("foldsVal");
+    const sizeVal = document.getElementById("sizeVal");
+    const paletteEl = document.getElementById("palette");
+    const gridBtn = document.getElementById("gridBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const saveBtn = document.getElementById("saveBtn");
+
+    let dpr = 1;
+    let cssW = 0;
+    let cssH = 0;
+    let cx = 0;
+    let cy = 0;
+    let folds = 8;
+    let brush = 4;
+    let color = COLORS[0].hex;
+    let rainbow = false;
+    let hue = 0;
+    let showGrid = true;
+    let drawing = false;
+    let last = null;
+    const strokes = [];
+    let current = null;
+
+    COLORS.forEach((c, i) => {
+      const b = document.createElement("button");
+      b.className = "swatch";
+      b.type = "button";
+      b.title = c.name;
+      b.style.background = c.hex;
+      b.setAttribute("aria-label", c.name);
+      b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+      b.addEventListener("click", () => pickColor(c.hex, false, b));
+      paletteEl.appendChild(b);
+    });
+
+    const rainbowBtn = document.createElement("button");
+    rainbowBtn.className = "rainbow";
+    rainbowBtn.type = "button";
+    rainbowBtn.title = "Rainbow";
+    rainbowBtn.setAttribute("aria-label", "Rainbow");
+    rainbowBtn.setAttribute("aria-pressed", "false");
+    rainbowBtn.addEventListener("click", () => pickColor(null, true, rainbowBtn));
+    paletteEl.appendChild(rainbowBtn);
+
+    function pickColor(hex, isRainbow, el) {
+      rainbow = isRainbow;
+      if (hex) color = hex;
+      paletteEl.querySelectorAll("button").forEach((btn) => {
+        btn.setAttribute("aria-pressed", btn === el ? "true" : "false");
+      });
+    }
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cssW = window.innerWidth;
+      cssH = window.innerHeight;
+      cx = cssW / 2;
+      cy = cssH / 2;
+      [ink, guides].forEach((c) => {
+        c.width = Math.round(cssW * dpr);
+        c.height = Math.round(cssH * dpr);
+      });
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      gtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      replay();
+      drawGuides();
+    }
+
+    function fillBg() {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = "#0b0610";
+      ctx.fillRect(0, 0, cssW, cssH);
+    }
+
+    function strokeColor(h) {
+      return rainbow ? `hsl(${h % 360}, 92%, 62%)` : color;
+    }
+
+    function stamp(x1, y1, x2, y2, n, width, col) {
+      const step = (Math.PI * 2) / n;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = width;
+      ctx.strokeStyle = col;
+      for (let i = 0; i < n; i++) {
+        const a = i * step;
+        const cos = Math.cos(a);
+        const sin = Math.sin(a);
+        for (const flip of [1, -1]) {
+          const ax1 = x1 - cx, ay1 = y1 - cy;
+          const ax2 = x2 - cx, ay2 = y2 - cy;
+          const rx1 = cx + cos * ax1 - sin * (ay1 * flip);
+          const ry1 = cy + sin * ax1 + cos * (ay1 * flip);
+          const rx2 = cx + cos * ax2 - sin * (ay2 * flip);
+          const ry2 = cy + sin * ax2 + cos * (ay2 * flip);
+          ctx.beginPath();
+          ctx.moveTo(rx1, ry1);
+          ctx.lineTo(rx2, ry2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function stampDot(x, y, n, width, col) {
+      stamp(x, y, x, y, n, width, col);
+    }
+
+    function replay() {
+      fillBg();
+      for (const s of strokes) {
+        if (!s.points.length) continue;
+        let h = s.hue0;
+        if (s.points.length === 1) {
+          stampDot(s.points[0].x, s.points[0].y, s.folds, s.brush, s.rainbow ? `hsl(${h % 360}, 92%, 62%)` : s.color);
+          continue;
+        }
+        for (let i = 1; i < s.points.length; i++) {
+          const a = s.points[i - 1];
+          const b = s.points[i];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          h += Math.hypot(dx, dy) * 0.35;
+          const col = s.rainbow ? `hsl(${h % 360}, 92%, 62%)` : s.color;
+          stamp(a.x, a.y, b.x, b.y, s.folds, s.brush, col);
+        }
+      }
+    }
+
+    function drawGuides() {
+      gtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      gtx.clearRect(0, 0, cssW, cssH);
+      if (!showGrid) return;
+      const rMax = Math.hypot(cx, cy);
+      gtx.strokeStyle = "rgba(246, 234, 216, 0.14)";
+      gtx.lineWidth = 1;
+      const rings = 6;
+      for (let i = 1; i <= rings; i++) {
+        gtx.beginPath();
+        gtx.arc(cx, cy, (rMax / rings) * i * 0.55, 0, Math.PI * 2);
+        gtx.stroke();
+      }
+      const n = folds;
+      for (let i = 0; i < n; i++) {
+        const a = (i * Math.PI * 2) / n;
+        gtx.beginPath();
+        gtx.moveTo(cx, cy);
+        gtx.lineTo(cx + Math.cos(a) * rMax, cy + Math.sin(a) * rMax);
+        gtx.stroke();
+      }
+      gtx.beginPath();
+      gtx.arc(cx, cy, 3, 0, Math.PI * 2);
+      gtx.fillStyle = "rgba(255, 179, 71, 0.55)";
+      gtx.fill();
+    }
+
+    function pos(e) {
+      const r = ink.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+
+    function startStroke(p) {
+      drawing = true;
+      last = p;
+      current = {
+        points: [p],
+        folds,
+        brush,
+        color,
+        rainbow,
+        hue0: hue,
+      };
+      const col = strokeColor(hue);
+      stampDot(p.x, p.y, folds, brush, col);
+    }
+
+    function extendStroke(p) {
+      if (!drawing || !last) return;
+      const dx = p.x - last.x;
+      const dy = p.y - last.y;
+      if (dx * dx + dy * dy < 0.25) return;
+      hue = (hue + Math.hypot(dx, dy) * 0.35) % 360;
+      stamp(last.x, last.y, p.x, p.y, folds, brush, strokeColor(hue));
+      current.points.push(p);
+      last = p;
+    }
+
+    function endStroke() {
+      if (!drawing) return;
+      drawing = false;
+      if (current) strokes.push(current);
+      current = null;
+      last = null;
+    }
+
+    ink.addEventListener("pointerdown", (e) => {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      try { ink.setPointerCapture(e.pointerId); } catch (_) { /* synthetic events */ }
+      startStroke(pos(e));
+    });
+
+    ink.addEventListener("pointermove", (e) => {
+      if (!drawing) return;
+      e.preventDefault();
+      const coalesced = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+      const events = coalesced.length ? coalesced : [e];
+      for (const ev of events) extendStroke(pos(ev));
+    });
+
+    ink.addEventListener("pointerup", endStroke);
+    ink.addEventListener("pointercancel", endStroke);
+    ink.addEventListener("lostpointercapture", endStroke);
+
+    foldsEl.addEventListener("input", () => {
+      folds = Number(foldsEl.value);
+      foldsVal.textContent = String(folds);
+      drawGuides();
+    });
+
+    sizeEl.addEventListener("input", () => {
+      brush = Number(sizeEl.value);
+      sizeVal.textContent = String(brush);
+    });
+
+    gridBtn.addEventListener("click", () => {
+      showGrid = !showGrid;
+      gridBtn.setAttribute("aria-pressed", showGrid ? "true" : "false");
+      drawGuides();
+    });
+
+    undoBtn.addEventListener("click", () => {
+      strokes.pop();
+      replay();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      strokes.length = 0;
+      fillBg();
+    });
+
+    saveBtn.addEventListener("click", () => {
+      const a = document.createElement("a");
+      a.download = "rangoli.png";
+      a.href = ink.toDataURL("image/png");
+      a.click();
+    });
+
+    window.addEventListener("resize", resize);
+    resize();
+  </script>
+</body>
+</html>

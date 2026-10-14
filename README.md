@@ -23,7 +23,7 @@ from Claude Code through Tiger MCP.
 |-----------|--------|--------|
 | Sign up for a Cursor Pro Account (×2) | n/a | Submitted (promo applied as $34 credit) |
 | Cannot sign up for Cursor Pro Account | n/a | Submitted (Pro now part of X Subscription Premium) |
-| CHALLENGE 1: Build a Mini App with Cursor | `cursor-mini-app/` | To do |
+| CHALLENGE 1: Build a Mini App with Cursor | [cursor-mini-app](cursor-mini-app/) | Built (Rangoli Maker) |
 | CHALLENGE 2: Benchmark Cursor's Models | `cursor-model-benchmark/` | To do |
 
 ## Running the code
