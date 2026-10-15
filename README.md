@@ -31,9 +31,9 @@ from Claude Code through Tiger MCP.
 | Challenge | Folder | Status |
 |-----------|--------|--------|
 | Code with Codespaces | n/a (GitHub Skills exercise) | Submitted |
-| Use GitHub Copilot to Build a Simple Application | [copilot-simple-app](copilot-simple-app/) | Built (SIGNAL LOST) |
+| Use GitHub Copilot to Build a Simple Application | [copilot-simple-app](copilot-simple-app/) | Submitted (SIGNAL LOST) |
 | Getting Started with Copilot | n/a (GitHub Skills exercise) | To do |
-| Use GitHub Copilot to complete any of this week's challenges | `copilot-simple-app/` | To do |
+| Use GitHub Copilot to complete any of this week's challenges | [copilot-simple-app](copilot-simple-app/) + GitHub Discussion | Submitted |
 
 ## Running the code
 
