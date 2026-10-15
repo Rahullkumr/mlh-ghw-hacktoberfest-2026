@@ -23,8 +23,17 @@ from Claude Code through Tiger MCP.
 |-----------|--------|--------|
 | Sign up for a Cursor Pro Account (×2) | n/a | Submitted (promo applied as $34 credit) |
 | Cannot sign up for Cursor Pro Account | n/a | Submitted (Pro now part of X Subscription Premium) |
-| CHALLENGE 1: Build a Mini App with Cursor | [cursor-mini-app](cursor-mini-app/) | Built (Rangoli Maker) |
-| CHALLENGE 2: Benchmark Cursor's Models | `cursor-model-benchmark/` | To do |
+| CHALLENGE 1: Build a Mini App with Cursor | [cursor-mini-app](cursor-mini-app/) | Submitted (Rangoli Maker) |
+| CHALLENGE 2: Benchmark Cursor's Models | n/a | Skipped (Cursor free weekly usage limit reached) |
+
+## GitHub
+
+| Challenge | Folder | Status |
+|-----------|--------|--------|
+| Code with Codespaces | n/a (GitHub Skills exercise) | Submitted |
+| Use GitHub Copilot to Build a Simple Application | [copilot-simple-app](copilot-simple-app/) | Built (SIGNAL LOST) |
+| Getting Started with Copilot | n/a (GitHub Skills exercise) | To do |
+| Use GitHub Copilot to complete any of this week's challenges | `copilot-simple-app/` | To do |
 
 ## Running the code
 
