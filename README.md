@@ -35,11 +35,12 @@ from Claude Code through Tiger MCP.
 
 | Challenge | Folder | Status |
 |-----------|--------|--------|
-| Code with Codespaces | n/a (GitHub Skills exercise) | Submitted |
+| Code with Codespaces | [github-codespaces](github-codespaces/) | Submitted |
+| Getting Started with Copilot | [github-copilot-getting-started](github-copilot-getting-started/) | Completed (submission pending) |
+| Intro to Repository Management | [github-repo-management](github-repo-management/) | In progress (step 1) |
 | Use GitHub Copilot to Build a Simple Application | [copilot-simple-app](copilot-simple-app/) | Submitted (SIGNAL LOST) |
-| Getting Started with Copilot | n/a (GitHub Skills exercise) | Completed (submission pending) |
-| Intro to Repository Management | n/a (GitHub Skills exercise) | To do |
 | Use GitHub Copilot to complete any of this week's challenges | [copilot-simple-app](copilot-simple-app/) + GitHub Discussion | Submitted |
+| Signup for the GitHub Student Developer Pack | n/a | Submitted |
 
 ## Running the code
 
